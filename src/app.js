@@ -15,6 +15,7 @@ app.use(cors())
 
 app.use(userRouter)
 
+// serving basic UI
 app.get('/', (req, res) => res.sendFile(path.join(publicPath, 'index.html')))
 
 module.exports = app
