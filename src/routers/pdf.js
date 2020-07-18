@@ -49,7 +49,7 @@ router.post('/merge', upload.array('pdfs', 2), async (req, res) => {
     // let pdf1_path = path.join(pdfsPath, req.files[0].filename)
     // let pdf2_path = path.join(pdfsPath, req.files[1].filename)
     let pdf1_path = req.files[0].filename
-    let pdf2_path = req.files[0].filename
+    let pdf2_path = req.files[1].filename
 
     const mergedPDF = 'merged_pdf_by_merger.pdf'
 
