@@ -7,16 +7,19 @@ const path = require('path')
 
 const pdfsPath = path.join(__dirname, '../public/pdfs')
 
-var merger = new PDFMerger()
-
 const router = new express.Router()
 
 const removeFile = (path) => {
-    fs.unlink(path, (err) => { // async.
-        if (err) {
-            return console.error(err)
-        }
-    })
+    // fs.unlink(path, (err) => { // async.
+    //     if (err) {
+    //         return console.error(err)
+    //     }
+    // })
+    try {
+        fs.unlinkSync(path)
+    } catch(e) {
+        console.log('\n\n remove file error \n\n', e)
+    }
 }
 
 var storage =   multer.diskStorage({
@@ -46,24 +49,32 @@ const upload = multer({ // multer configuration options
  * downloads the merged pdf for user
  */
 router.post('/merge', upload.array('pdfs', 2), async (req, res) => {
-    // let pdf1_path = path.join(pdfsPath, req.files[0].filename)
-    // let pdf2_path = path.join(pdfsPath, req.files[1].filename)
-    let pdf1_path = req.files[0].filename
-    let pdf2_path = req.files[1].filename
+    try {
+        // let pdf1_path = path.join(pdfsPath, req.files[0].filename)
+        // let pdf2_path = path.join(pdfsPath, req.files[1].filename)
+        let pdf1_path = req.files[0].filename
+        let pdf2_path = req.files[1].filename
 
-    const mergedPDF = 'merged_pdf_by_merger.pdf'
+        const mergedPDF = 'merged_pdf_by_merger.pdf'
+        removeFile('./'+mergedPDF) // removing old merged file
 
-    merger.add(pdf1_path)
-    merger.add(pdf2_path)
-    await merger.save(mergedPDF); //save under given name
+        var merger = new PDFMerger()
 
-    // removing old files after merge is completed
-    removeFile(pdf1_path)
-    removeFile(pdf2_path)
+        merger.add(pdf1_path)
+        merger.add(pdf2_path)
+        await merger.save(mergedPDF) //save under given name
+        
+        res.download(mergedPDF)
 
-    res.download(mergedPDF)
-    // removeFile(mergedPDF)
+        // removing after merge is completed
+        removeFile(pdf1_path)
+        removeFile(pdf2_path)
+    } catch (error) {
+        console.log('\n\n try block error \n\n', error)
+        res.send({ error })
+    }
 }, (error, req, res, next) => {
+    console.log('\n\n 3rd arg cb error \n\n', error)
     res.status(400).send({error: error.message})
 })
 
