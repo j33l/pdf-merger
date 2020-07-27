@@ -3,13 +3,16 @@
 <body>
 
 <h1>Merge PDFs</h1>
+<p>Only allowed PDF, DOC and DOCX files.</p>
 
 <form method="POST" action="/merge" enctype="multipart/form-data">
-  <label for="pdfs">Select all files:</label>
-  <input type="file" name="pdfs" multiple>
+  <label for="files">Select all files:</label>
+  <input type="file" name="files" multiple>
   <br />
   <button type="submit">Merge PDFs</button>
 </form>
+
+<p id="download-message">Wait... your files will be converted, merged and start downloading soon...</p>
 
 </body>
 </html>

@@ -1,13 +1,21 @@
 const express = require('express')
 const multer = require('multer')
+
 const PDFMerger = require('pdf-merger-js')
+const { docxToPdfFromPath, initIva, convertDocxToPDFFromFile } = require("iva-converter")
 
 const fs = require('fs')
 const path = require('path')
 
+const { writeFileSync } = require("fs")
+const { basename } = require("path")
+
 const pdfsPath = path.join(__dirname, '../public/pdfs')
 
 const router = new express.Router()
+
+// GET YOUR API KEY AT https://app.iva-docs.com/auth/register
+initIva(process.env.IVA_CONVERTER_API_KEY)
 
 const removeFile = (path) => {
     // fs.unlink(path, (err) => { // async.
@@ -22,6 +30,41 @@ const removeFile = (path) => {
     }
 }
 
+// reference : https://codeburst.io/javascript-async-await-with-foreach-b6ba62bbf404
+async function asyncForEach(array, callback) {
+    for (let index = 0; index < array.length; index++) {
+        await callback(array[index], index, array);
+    }
+}
+
+let convertDocToPdf = function(filePath) {
+    return new Promise(function (resolve, reject) {
+    
+        docxToPdfFromPath(filePath)
+            .then((pdfFile) => {
+                // writeFileSync(basename(filePath).replace(".docx", ".pdf"), pdfFile); // storing on fileSys
+                resolve(pdfFile)
+            })
+            .catch((err) => {
+                if (err === 429 || err === 408) {
+                    // Retry logic
+                    console.log(err, 'fail, retry.')
+                    reject(err + ': fail, retry.');
+                }
+            })
+        
+            // Using `docx-pdf` module
+            // docxConverter(file.path, file.path+'.pdf',function(err,result) {
+            //     if(err){
+            //       console.log(err);
+            //     }
+        
+            //     merger.add(file.path)
+            //     console.log('result'+result);
+            //   })
+    })
+}
+
 var storage =   multer.diskStorage({
     destination: function (req, file, callback) {
     //   callback(null, pdfsPath);
@@ -29,7 +72,9 @@ var storage =   multer.diskStorage({
       callback(null, './');
     },
     filename: function (req, file, callback) {
-      callback(null, file.fieldname + '-' + Date.now() + '.pdf');
+        // callback(null, file.fieldname + '-' + Date.now() + '.pdf');
+       
+        callback(null, file.originalname);
     }
 })
 
@@ -37,7 +82,8 @@ const upload = multer({ // multer configuration options
     // dest: 'pdfs', // destination path
     storage,
     fileFilter(req, file, cb) {
-        if(!file.originalname.endsWith('.pdf')) {
+        // if(!file.originalname.endsWith('.pdf')) {
+        if(!file.originalname.match(/\.(pdf|docx|doc)$/)) {
             return cb(new Error(('File type is invalid!')))
         }
 
@@ -48,12 +94,13 @@ const upload = multer({ // multer configuration options
 /**
  * downloads the merged pdf for user
  */
-router.post('/merge', upload.array('pdfs'), async (req, res) => {
+router.post('/merge', upload.array('files'), async (req, res) => {
     try {
         var merger = new PDFMerger()
 
-        req.files.forEach(file => {
-            merger.add(file.filename)
+        await asyncForEach(req.files, async (file) => {
+            const pdfFile = await convertDocToPdf(file.path)
+            merger.add(pdfFile)
         })
 
         const mergedPDF = 'merged_pdf_by_merger.pdf'
