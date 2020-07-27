@@ -5,11 +5,8 @@
 <h1>Merge PDFs</h1>
 
 <form method="POST" action="/merge" enctype="multipart/form-data">
-  <label for="pdfs">Select 1st PDF file:</label>
-  <input type="file" name="pdfs">
-  <br />
-  <label for="pdfs">Select 2nd PDF file:</label>
-  <input type="file" name="pdfs">
+  <label for="pdfs">Select all files:</label>
+  <input type="file" name="pdfs" multiple>
   <br />
   <button type="submit">Merge PDFs</button>
 </form>

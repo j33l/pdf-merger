@@ -48,27 +48,27 @@ const upload = multer({ // multer configuration options
 /**
  * downloads the merged pdf for user
  */
-router.post('/merge', upload.array('pdfs', 2), async (req, res) => {
+router.post('/merge', upload.array('pdfs'), async (req, res) => {
     try {
-        // let pdf1_path = path.join(pdfsPath, req.files[0].filename)
-        // let pdf2_path = path.join(pdfsPath, req.files[1].filename)
-        let pdf1_path = req.files[0].filename
-        let pdf2_path = req.files[1].filename
-
-        const mergedPDF = 'merged_pdf_by_merger.pdf'
-        removeFile('./'+mergedPDF) // removing old merged file
-
         var merger = new PDFMerger()
 
-        merger.add(pdf1_path)
-        merger.add(pdf2_path)
+        req.files.forEach(file => {
+            merger.add(file.filename)
+        })
+
+        const mergedPDF = 'merged_pdf_by_merger.pdf'
+
         await merger.save(mergedPDF) //save under given name
         
         res.download(mergedPDF)
 
         // removing after merge is completed
-        removeFile(pdf1_path)
-        removeFile(pdf2_path)
+        req.files.forEach(file => {
+            removeFile(file.filename)
+        })
+
+        // removeFile(path.join(__dirname, mergedPDF)) // removing old merged file
+        
     } catch (error) {
         console.log('\n\n try block error \n\n', error)
         res.send({ error })
