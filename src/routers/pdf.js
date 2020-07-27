@@ -7,8 +7,9 @@ const { docxToPdfFromPath, initIva, convertDocxToPDFFromFile } = require("iva-co
 const fs = require('fs')
 const path = require('path')
 
-const { writeFileSync } = require("fs")
-const { basename } = require("path")
+// used to save converted DOC
+// const { writeFileSync } = require("fs")
+// const { basename } = require("path")
 
 const pdfsPath = path.join(__dirname, '../public/pdfs')
 
@@ -23,6 +24,7 @@ const removeFile = (path) => {
     //         return console.error(err)
     //     }
     // })
+    
     try {
         fs.unlinkSync(path)
     } catch(e) {
@@ -65,7 +67,7 @@ let convertDocToPdf = function(filePath) {
     })
 }
 
-var storage =   multer.diskStorage({
+var storage = multer.diskStorage({
     destination: function (req, file, callback) {
     //   callback(null, pdfsPath);
     //   callback(null, './public/pdfs');
@@ -73,7 +75,6 @@ var storage =   multer.diskStorage({
     },
     filename: function (req, file, callback) {
         // callback(null, file.fieldname + '-' + Date.now() + '.pdf');
-       
         callback(null, file.originalname);
     }
 })
@@ -98,6 +99,7 @@ router.post('/merge', upload.array('files'), async (req, res) => {
     try {
         var merger = new PDFMerger()
 
+        // converting DOC into PDF before merging
         await asyncForEach(req.files, async (file) => {
             const pdfFile = await convertDocToPdf(file.path)
             merger.add(pdfFile)
@@ -113,9 +115,7 @@ router.post('/merge', upload.array('files'), async (req, res) => {
         req.files.forEach(file => {
             removeFile(file.filename)
         })
-
         // removeFile(path.join(__dirname, mergedPDF)) // removing old merged file
-        
     } catch (error) {
         console.log('\n\n try block error \n\n', error)
         res.send({ error })
