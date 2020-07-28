@@ -165,7 +165,10 @@ router.post('/merge', upload.array('files'), async (req, res) => {
 
         // converting DOC into PDF before merging
         await asyncForEach(req.files, async (file) => {
-            const pdfFile = await convertDocToPdf(file.path)
+            let pdfFile = file.path
+            if(file.originalname.match(/\.(docx|doc)$/)) {
+                pdfFile = await convertDocToPdf(file.path)
+            }
             merger.add(pdfFile)
         })
 
@@ -176,8 +179,10 @@ router.post('/merge', upload.array('files'), async (req, res) => {
         await merger.save(mergedPDF) //save under given name
 
         if(embadedpagenumber) {
+            // const finalPdf = 
             await embeddingPageNumber(mergedPDF) // embedding Page Numbers
             res.download('./final_numbered.pdf')
+            // res.send(Buffer.from(finalPdf))
         } else {
             res.download(mergedPDF)
         }
@@ -189,7 +194,7 @@ router.post('/merge', upload.array('files'), async (req, res) => {
             removeFile(file.filename)
         })
 
-        //TODO: remove final files `merged_pdf.pdf` and `final_numbered.pdf`
+        //TODO: remove final files `merged_pdf.pdf` and `final_numbered.pdf` after sending
         // removeFile(path.join(__dirname, mergedPDF)) // removing old merged file
     } catch (error) {
         console.log('\n\n try block error \n\n', error)

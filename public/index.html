@@ -4,6 +4,11 @@
 
 <h1>Merge To PDF</h1>
 <p>Only allowed PDF, DOC and DOCX files.</p>
+<p>File name must not contain...commas (,), semicolon (;), quotes ( ", ' ), braces ({}), pipes (|), or slashes ( / \ ).</p>
+<p>Rename if it does...</p>
+
+<br />
+<br />
 
 <form method="POST" action="/merge" enctype="multipart/form-data">
   <label for="files">Select all files:</label>
@@ -14,6 +19,9 @@
   <br />
   <button type="submit">Merge PDFs</button>
 </form>
+
+<br />
+<br />
 
 <p id="download-message">Wait... your files will be converted, merged and start downloading soon...</p>
 
