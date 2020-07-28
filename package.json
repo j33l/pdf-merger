@@ -5,8 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "env-cmd -f ./config/dev.env nodemon src/index.js -e js",
-    "dev-convert": "env-cmd -f ./config/dev.env node converter.js"
+    "dev": "env-cmd -f ./config/dev.env nodemon src/index.js -e js"
   },
   "keywords": [],
   "author": "",
@@ -16,6 +15,7 @@
     "express": "^4.17.1",
     "iva-converter": "^1.4.2",
     "multer": "^1.4.2",
+    "pdf-lib": "^1.9.0",
     "pdf-merger-js": "^3.0.4"
   },
   "devDependencies": {

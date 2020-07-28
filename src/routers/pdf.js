@@ -1,8 +1,10 @@
 const express = require('express')
 const multer = require('multer')
 
-const PDFMerger = require('pdf-merger-js')
-const { docxToPdfFromPath, initIva, convertDocxToPDFFromFile } = require("iva-converter")
+const PDFMerger = require('pdf-merger-js') // to merge multiple pdfs into single pdf
+const { docxToPdfFromPath, initIva, convertDocxToPDFFromFile } = require("iva-converter") // to convert DOC into PDF
+
+const { PDFDocument, StandardFonts, rgb } = require('pdf-lib') // to embade page number in PDF
 
 const fs = require('fs')
 const path = require('path')
@@ -18,6 +20,12 @@ const router = new express.Router()
 // GET YOUR API KEY AT https://app.iva-docs.com/auth/register
 initIva(process.env.IVA_CONVERTER_API_KEY)
 
+/**
+ * 
+ * @param {path of the file to be removed} path 
+ * 
+ * returns nothing, just removes the specified file
+ */
 const removeFile = (path) => {
     // fs.unlink(path, (err) => { // async.
     //     if (err) {
@@ -32,13 +40,58 @@ const removeFile = (path) => {
     }
 }
 
-// reference : https://codeburst.io/javascript-async-await-with-foreach-b6ba62bbf404
+/**
+ * 
+ * @param {array to loop through} array 
+ * @param {callback function to run after process is completed} callback 
+ * 
+ * reference : https://codeburst.io/javascript-async-await-with-foreach-b6ba62bbf404
+ */
 async function asyncForEach(array, callback) {
     for (let index = 0; index < array.length; index++) {
         await callback(array[index], index, array);
     }
 }
 
+/**
+ * 
+ * @param {path of the pdf file} pdfFile 
+ * 
+ * returns nothing, just saves new pdf file with embaded numbers
+ * 
+ * reference : http://thecodebarbarian.com/working-with-pdfs-in-node-js.html
+ */
+async function embeddingPageNumber(pdfFile) {
+    const content = await PDFDocument.load(fs.readFileSync(pdfFile));
+  
+    // Add a font to the doc
+    const helveticaFont = await content.embedFont(StandardFonts.Helvetica);
+  
+    // Draw a number at the bottom of each page.
+    // Note that the bottom of the page is `y = 0`, not the top
+    const pages = await content.getPages();
+    for (const [i, page] of Object.entries(pages)) {
+      page.drawText(`${+i + 1}`, {
+        x: page.getWidth() / 2,
+        y: 10,
+        size: 15,
+        font: helveticaFont,
+        color: rgb(0, 0, 0)
+      });
+    }
+  
+    // Write the PDF to a file
+    fs.writeFileSync('./final_numbered.pdf', await content.save());
+
+    // return await content.save() // Uint8Array
+}
+
+/**
+ * 
+ * @param {DOC file path} filePath 
+ * 
+ * converts the specified DOC file into PDF and `then` is called with converted PDF file data
+ */
 let convertDocToPdf = function(filePath) {
     return new Promise(function (resolve, reject) {
     
@@ -67,6 +120,10 @@ let convertDocToPdf = function(filePath) {
     })
 }
 
+/**
+ * disk storage object for multer
+ * specifies storage destination and filename
+ */
 var storage = multer.diskStorage({
     destination: function (req, file, callback) {
     //   callback(null, pdfsPath);
@@ -79,6 +136,11 @@ var storage = multer.diskStorage({
     }
 })
 
+/**
+ * upload middleware for multer
+ * 
+ * includes file type filter and storage object
+ */
 const upload = multer({ // multer configuration options
     // dest: 'pdfs', // destination path
     storage,
@@ -93,7 +155,9 @@ const upload = multer({ // multer configuration options
 })
 
 /**
- * downloads the merged pdf for user
+ * API route to murge multiple PDFs into single PDF and downloads it to the client machine
+ * 
+ * It performs DOC to PDF conversion, page number embading for final murged pdf
  */
 router.post('/merge', upload.array('files'), async (req, res) => {
     try {
@@ -108,8 +172,11 @@ router.post('/merge', upload.array('files'), async (req, res) => {
         const mergedPDF = 'merged_pdf_by_merger.pdf'
 
         await merger.save(mergedPDF) //save under given name
+
+        await embeddingPageNumber(mergedPDF) // embedding Page Numbers
         
-        res.download(mergedPDF)
+        res.download('./final_numbered.pdf')
+        // res.send(finalPdf)
 
         // removing after merge is completed
         req.files.forEach(file => {
