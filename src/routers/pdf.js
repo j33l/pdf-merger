@@ -169,19 +169,27 @@ router.post('/merge', upload.array('files'), async (req, res) => {
             merger.add(pdfFile)
         })
 
+        const embadedpagenumber = req.body.embadedpagenumber
+
         const mergedPDF = 'merged_pdf_by_merger.pdf'
 
         await merger.save(mergedPDF) //save under given name
 
-        await embeddingPageNumber(mergedPDF) // embedding Page Numbers
-        
-        res.download('./final_numbered.pdf')
+        if(embadedpagenumber) {
+            await embeddingPageNumber(mergedPDF) // embedding Page Numbers
+            res.download('./final_numbered.pdf')
+        } else {
+            res.download(mergedPDF)
+        }
+
         // res.send(finalPdf)
 
         // removing after merge is completed
         req.files.forEach(file => {
             removeFile(file.filename)
         })
+
+        //TODO: remove final files `merged_pdf.pdf` and `final_numbered.pdf`
         // removeFile(path.join(__dirname, mergedPDF)) // removing old merged file
     } catch (error) {
         console.log('\n\n try block error \n\n', error)
